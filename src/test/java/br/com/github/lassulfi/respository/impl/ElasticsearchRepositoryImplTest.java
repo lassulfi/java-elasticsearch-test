@@ -6,6 +6,7 @@ import static org.junit.Assert.assertThat;
 import java.util.UUID;
 
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,11 +27,13 @@ public class ElasticsearchRepositoryImplTest {
 	private static final String INDEX = "likes";
 	private static final String TYPE = "like";
 	
+	private static final String FORNECEDOR_ID = "6500";
+	
 	@Before
 	public void setup() throws Exception {
 		repo = new ElasticsearchRepositoryImpl();
 		
-		jsonObject = this.getJsonObject();
+		jsonObject = this.getJsonObject(FORNECEDOR_ID);
 	}
 	
 	@Test
@@ -39,16 +42,49 @@ public class ElasticsearchRepositoryImplTest {
 		
 		assertThat(response.getId(), is(ID));		
 	}
+	
+	@Test
+	public void testFindById() {
+		repo.insert(INDEX, TYPE, ID, jsonObject);
+		
+		JsonNode jsonObject = repo.getById(INDEX, TYPE, ID);
+		
+		assertThat(jsonObject.get("fornecedor_id").asText(), is(FORNECEDOR_ID));
+	}
+	
+	@Test
+	public void testUpsertNewObject() {
+		UpdateResponse response = repo.update(INDEX, TYPE, ID, jsonObject);
+		
+		assertThat(response.getId(), is(ID));
+	}
+	
+	@Test
+	public void testUpdateExistingObject() throws Exception {
+		repo.insert(INDEX, TYPE, ID, jsonObject);
+		
+		String newFornecedorId = "8500";
+		
+		JsonNode updatedObject = this.getJsonObject(newFornecedorId);
+		
+		repo.update(INDEX, TYPE, ID, updatedObject);
+		
+		JsonNode response = repo.getById(INDEX, TYPE, ID);
+		
+		assertThat(response.get("fornecedor_id").toString(), 
+				is(updatedObject.get("fornecedor_id").toString()));
+		
+	}
 		
 	@After
 	public void tearDown() {
 		this.repo.deleteById(INDEX, TYPE, ID);
 	}
 	
-	private JsonNode getJsonObject() throws Exception {
+	private JsonNode getJsonObject(String fornecedorId) throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 		
-		String jsonString = "{\"fornecedor_id\": \"5200\",\n" +
+		String jsonString = "{\"fornecedor_id\": \"" + fornecedorId + "\",\n" +
 	            "                    \"users_likes\": [\n" +
 	            "                        {\n" +
 	            "                            \"user_id\": \"1\"\n" +

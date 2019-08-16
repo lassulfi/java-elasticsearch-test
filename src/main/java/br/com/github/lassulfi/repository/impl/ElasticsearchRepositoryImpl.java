@@ -9,6 +9,7 @@ import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -84,8 +85,38 @@ public class ElasticsearchRepositoryImpl implements ElasticsearchRepository {
 	}
 
 	public UpdateResponse update(String index, String type, String id, JsonNode jsonObject) {
-		// TODO Auto-generated method stub
-		return null;
+		RestHighLevelClient client = this.getClient();
+		
+		UpdateRequest request = new UpdateRequest(index, type, id);
+		
+		ObjectMapper mapper = this.getMapper();
+		
+		String jsonString = null;
+		try {
+			jsonString = mapper.writeValueAsString(jsonObject);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		request.doc(jsonString, XContentType.JSON);
+		request.upsert(jsonString, XContentType.JSON);
+		
+		UpdateResponse response = null;
+		
+		try {
+			response = client.update(request);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			try {
+				client.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		return response;
 	}
 
 	public void deleteById(String index, String type, String id) {
