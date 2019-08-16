@@ -34,7 +34,7 @@ public class ElasticsearchRepositoryImplTest {
 	}
 	
 	@Test
-	public void testInsertClient() {
+	public void testInsertObject() {
 		IndexResponse response = repo.insert(INDEX, ID, jsonObject);
 		
 		assertThat(response.getId(), is(ID));		
