@@ -9,7 +9,7 @@ public interface ElasticsearchRepository {
 	
 	IndexResponse insert(String index, String id, JsonNode jsonObject);
 	
-	JsonNode getById(String index, String type, String id);
+	JsonNode getById(String index, String id);
 	
 	UpdateResponse update(String index, String type, String id, JsonNode jsonObject);
 	
