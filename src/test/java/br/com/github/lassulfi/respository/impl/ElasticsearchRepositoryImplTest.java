@@ -23,8 +23,8 @@ public class ElasticsearchRepositoryImplTest {
 	private JsonNode jsonObject;
 	
 	private static final String ID = UUID.randomUUID().toString();
-	private static final String INDEX = "menus";
-	private static final String TYPE = "menu";
+	private static final String INDEX = "likes";
+	private static final String TYPE = "like";
 	
 	@Before
 	public void setup() throws Exception {
@@ -35,7 +35,7 @@ public class ElasticsearchRepositoryImplTest {
 	
 	@Test
 	public void testInsertObject() {
-		IndexResponse response = repo.insert(INDEX, ID, jsonObject);
+		IndexResponse response = repo.insert(INDEX, TYPE, ID, jsonObject);
 		
 		assertThat(response.getId(), is(ID));		
 	}
@@ -48,17 +48,33 @@ public class ElasticsearchRepositoryImplTest {
 	private JsonNode getJsonObject() throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 		
-		String jsonString = "{\"menu\": {\n" + 
-				"  \"id\": \"file\",\n" + 
-				"  \"value\": \"File\",\n" + 
-				"  \"popup\": {\n" + 
-				"    \"menuitem\": [\n" + 
-				"      {\"value\": \"New\", \"onclick\": \"CreateNewDoc()\"},\n" + 
-				"      {\"value\": \"Open\", \"onclick\": \"OpenDoc()\"},\n" + 
-				"      {\"value\": \"Close\", \"onclick\": \"CloseDoc()\"}\n" + 
-				"    ]\n" + 
-				"  }\n" + 
-				"}}";
+		String jsonString = "{\"fornecedor_id\": \"5200\",\n" +
+	            "                    \"users_likes\": [\n" +
+	            "                        {\n" +
+	            "                            \"user_id\": \"1\"\n" +
+	            "                        },\n" +
+	            "                        {\n" +
+	            "                            \"user_id\": \"3\"\n" +
+	            "                        },\n" +
+	            "                        {\n" +
+	            "                            \"user_id\": \"5\"\n" +
+	            "                        },\n" +
+	            "                        {\n" +
+	            "                            \"user_id\": \"10\"\n" +
+	            "                        }\n" +
+	            "                    ],\n" +
+	            "                    \"users_dislikes\": [\n" +
+	            "                        {\n" +
+	            "                            \"user_id\": \"30\"\n" +
+	            "                        },\n" +
+	            "                        {\n" +
+	            "                            \"user_id\": \"9\"\n" +
+	            "                        },\n" +
+	            "                        {\n" +
+	            "                            \"user_id\": \"4\"\n" +
+	            "                        }\n" +
+	            "                    ]\n" +
+	            "}";
 		
 		return mapper.readTree(jsonString);
 	}
