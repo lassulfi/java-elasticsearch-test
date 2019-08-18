@@ -2,9 +2,12 @@ package br.com.github.lassulfi.respository.impl;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.util.UUID;
 
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.junit.After;
@@ -74,6 +77,20 @@ public class ElasticsearchRepositoryImplTest {
 		assertThat(response.get("fornecedor_id").toString(), 
 				is(updatedObject.get("fornecedor_id").toString()));
 		
+	}
+	
+	@Test
+	public void testDeleteById() {
+		DeleteResponse response = this.repo.deleteById(INDEX, TYPE, ID);
+		
+		assertThat(response.getResult().toString(), is("NOT_FOUND"));
+	}
+	
+	@Test
+	public void testDeleteIndex() {
+		DeleteIndexResponse response = this.repo.deleteIndex(INDEX);
+				
+		assertTrue(response.isAcknowledged());
 	}
 		
 	@After

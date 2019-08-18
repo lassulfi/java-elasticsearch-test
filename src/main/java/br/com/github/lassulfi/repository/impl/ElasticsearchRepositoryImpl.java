@@ -1,14 +1,15 @@
 package br.com.github.lassulfi.repository.impl;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.http.HttpHost;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RestClient;
@@ -48,12 +49,12 @@ public class ElasticsearchRepositoryImpl implements ElasticsearchRepository {
 		IndexResponse response = null;		
 		try {
 			response = client.index(request);
-		} catch (IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
 			try {
 				client.close();
-			} catch (IOException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
@@ -69,12 +70,12 @@ public class ElasticsearchRepositoryImpl implements ElasticsearchRepository {
 		GetResponse response = null;
 		try {
 			response = client.get(request);
-		} catch (IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
 			try {
 				client.close();
-			} catch (IOException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
@@ -105,13 +106,13 @@ public class ElasticsearchRepositoryImpl implements ElasticsearchRepository {
 		
 		try {
 			response = client.update(request);
-		} catch (IOException e) {
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
 			try {
 				client.close();
-			} catch (IOException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
@@ -119,9 +120,50 @@ public class ElasticsearchRepositoryImpl implements ElasticsearchRepository {
 		return response;
 	}
 
-	public void deleteById(String index, String type, String id) {
-		// TODO Auto-generated method stub
+	public DeleteResponse deleteById(String index, String type, String id) {
+		RestHighLevelClient client = this.getClient();
+		
+		DeleteRequest request = new DeleteRequest(index, type, id);
+		
+		DeleteResponse response = null;
+		
+		try {
+			response = client.delete(request);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				client.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 
+		return response;
+	}
+	
+	public DeleteIndexResponse deleteIndex(String index) {
+		RestHighLevelClient client = this.getClient();
+		
+		DeleteIndexRequest request = new DeleteIndexRequest(index);
+		request.indicesOptions(IndicesOptions.lenientExpandOpen());
+		
+		DeleteIndexResponse response = null;
+		
+		try {
+			response = client.indices().delete(request);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				client.close();
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+		return response;
+		
 	}
 	
 	private ObjectMapper getMapper() {
