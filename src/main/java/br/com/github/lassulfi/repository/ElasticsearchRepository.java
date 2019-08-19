@@ -13,6 +13,10 @@ public interface ElasticsearchRepository {
 	
 	JsonNode getById(String index, String type, String id);
 	
+	JsonNode getByScript(String index, String query, JsonNode mappingParams);
+	
+	UpdateResponse updateMapping(String index, String type, String id, String script, JsonNode mappingParams);
+	
 	UpdateResponse update(String index, String type, String id, JsonNode jsonObject);
 	
 	DeleteResponse deleteById(String index, String type, String id);
