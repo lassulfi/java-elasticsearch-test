@@ -5,9 +5,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
 import java.util.UUID;
 
+import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
@@ -32,13 +32,23 @@ public class ElasticsearchRepositoryImplTest {
 	private static final String INDEX = "likes";
 	private static final String TYPE = "json";
 	
-	private static final String FORNECEDOR_ID = UUID.randomUUID().toString();
-	
 	@Before
 	public void setup() throws Exception {
 		repo = new ElasticsearchRepositoryImpl();
 		
 		jsonObject = this.getJsonObject();
+	}
+	
+	@Test
+	public void testCreateIndex() {
+		String newIndex = "tests";
+		
+		this.repo.deleteIndex(newIndex);
+		
+		CreateIndexResponse response = this.repo.createIndex(newIndex, null);
+		
+		assertThat(response.index(), is(newIndex));
+		
 	}
 	
 	@Test
@@ -54,12 +64,13 @@ public class ElasticsearchRepositoryImplTest {
 		
 		JsonNode jsonObject = repo.getById(INDEX, TYPE, ID);
 		
-		assertThat(jsonObject.get("fornecedor_id").asText(), is(FORNECEDOR_ID));
+		assertNotNull(jsonObject);
 	}
 	
 	@Test
 	public void testGetByScript() {
-				
+		repo.insert(INDEX, TYPE, ID, jsonObject);
+		
 		String script = "int total = 0;"
 				+ "for (int i = 0; i < doc['likes'].length; ++i) {"
 				+ "++total;"
@@ -105,21 +116,23 @@ public class ElasticsearchRepositoryImplTest {
 		
 		JsonNode response = repo.getById(INDEX, TYPE, ID);
 		
-		//TODO: correct the assertion
 		assertThat(response.get("likes").toString(), 
 				is("[\"user_01\",\"user_02\",\"user_10\"]"));
 		
 	}
 		
 	@Test
-	public void testDeleteById() {
+	public void testDeleteById() throws Exception {
+		this.repo.insert(INDEX, TYPE, ID, this.getJsonObject());
+		
 		DeleteResponse response = this.repo.deleteById(INDEX, TYPE, ID);
 		
-		assertThat(response.getResult().toString(), is("NOT_FOUND"));
+		assertThat(response.getResult().toString(), is("DELETED"));
 	}
 	
 	@Test
 	public void testDeleteIndex() {
+				
 		DeleteIndexResponse response = this.repo.deleteIndex(INDEX);
 				
 		assertTrue(response.isAcknowledged());
@@ -127,7 +140,7 @@ public class ElasticsearchRepositoryImplTest {
 		
 	@After
 	public void tearDown() {
-		this.repo.deleteById(INDEX, TYPE, ID);
+		this.repo.deleteIndex(INDEX);
 	}
 	
 	private JsonNode getJsonObject() throws Exception {

@@ -4,10 +4,10 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.apache.http.HttpHost;
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
+import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
-import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
-import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetRequest;
@@ -38,7 +38,41 @@ public class ElasticsearchRepositoryImpl implements ElasticsearchRepository {
 	private static final int PORT_ONE = 9200;
 	private static final int PORT_TWO = 9300;
 	private static final String SCHEME = "http";
-
+	
+	public CreateIndexResponse createIndex(String index, JsonNode mappingSource) {
+		RestHighLevelClient client = this.getClient();
+		
+		CreateIndexRequest request = new CreateIndexRequest(index);
+		
+		if(mappingSource != null ) {
+			ObjectMapper mapper = new ObjectMapper();
+			String mappingString = null;
+			try {
+				mappingString = mapper.writeValueAsString(mappingSource);
+			} catch (JsonProcessingException e) {
+				e.printStackTrace();
+			}
+			
+			request.mapping(mappingString, XContentType.JSON);
+		}		
+		
+		CreateIndexResponse response = null;
+		
+		try {
+			response = client.indices().create(request);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				client.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+		return response;
+	}
+	
 	public IndexResponse insert(String index, String type, String id, JsonNode jsonObject) {
 		RestHighLevelClient client = this.getClient();
 
@@ -253,8 +287,7 @@ public class ElasticsearchRepositoryImpl implements ElasticsearchRepository {
 		}
 	}
 	
-	private boolean findIndex(String index) {
-		RestHighLevelClient client = this.getClient();
+	private boolean findIndex(RestHighLevelClient client, String index) {
 		
 		IndexRequest indexRequest = new IndexRequest(index);
 		
@@ -274,5 +307,7 @@ public class ElasticsearchRepositoryImpl implements ElasticsearchRepository {
 		
 		return response == null ? false : true;
 	}
+
+
 
 }
