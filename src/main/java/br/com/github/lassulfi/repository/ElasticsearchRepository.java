@@ -1,9 +1,12 @@
 package br.com.github.lassulfi.repository;
 
+import java.util.Map;
+
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateResponse;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -25,5 +28,8 @@ public interface ElasticsearchRepository {
 	DeleteResponse deleteById(String index, String type, String id);
 	
 	DeleteIndexResponse deleteIndex(String index);
+	
+	SearchResponse count(String[] indices, Map<String, String> queryTerms, Map<String, String> countTerms, 
+			Map<String, String> countFields);
 	
 }

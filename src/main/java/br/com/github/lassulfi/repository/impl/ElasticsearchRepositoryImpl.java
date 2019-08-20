@@ -15,16 +15,25 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.metrics.CounterMetric;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.MatchAllQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -128,7 +137,22 @@ public class ElasticsearchRepositoryImpl implements ElasticsearchRepository {
 
 		return response != null ? mapper.convertValue(response.getSourceAsMap(), JsonNode.class) : null;
 	}
-	
+		
+	public JsonNode getByQueryParams(String[] indices, Map<String, String> queryParams) {
+		RestHighLevelClient client = this.getClient();
+		
+		String requestIndices = null;
+		for(String index : indices) {
+			requestIndices += index + ",";
+		}
+		requestIndices = requestIndices.substring(0, requestIndices.length() - 1);	
+		
+		SearchRequest request = new SearchRequest(requestIndices);
+		
+		
+		return null;
+	}
+
 	public JsonNode getByScript(String index, String scriptQuery, JsonNode mappingParams) {
 		RestHighLevelClient client = this.getClient();
 		
@@ -157,9 +181,8 @@ public class ElasticsearchRepositoryImpl implements ElasticsearchRepository {
 	}
 
 	public UpdateResponse update(String index, String type, String id, JsonNode jsonObject) {
-		RestHighLevelClient client = this.getClient();
-
-		UpdateRequest request = new UpdateRequest(index, type, id);
+		IndexRequest indexRequest = new IndexRequest(index, type, id);
+		UpdateRequest updateRequest = new UpdateRequest(index, type, id);
 
 		ObjectMapper mapper = this.getMapper();
 
@@ -170,13 +193,16 @@ public class ElasticsearchRepositoryImpl implements ElasticsearchRepository {
 			e.printStackTrace();
 		}
 
-		request.doc(jsonString, XContentType.JSON);
-		request.upsert(XContentType.JSON);
+		indexRequest.source(jsonString, XContentType.JSON);	
+		updateRequest.doc(jsonString, XContentType.JSON);
+		updateRequest.upsert(indexRequest);
 
 		UpdateResponse response = null;
 
+		RestHighLevelClient client = this.getClient();
+		
 		try {
-			response = client.update(request);
+			response = client.update(updateRequest);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -262,6 +288,38 @@ public class ElasticsearchRepositoryImpl implements ElasticsearchRepository {
 		return response;
 
 	}
+	
+	public SearchResponse count(String[] indices, Map<String, String> queryTerms, Map<String, String> countTerms, 
+			Map<String, String> countFields) {	
+		if(queryTerms == null || countTerms == null || countFields == null) {
+			return null;
+		}
+		
+		SearchSourceBuilder builder = new SearchSourceBuilder();
+		this.buildMustQuery(builder, queryTerms);
+		this.buildSumAggregation(builder, countTerms, countFields);
+		
+		SearchRequest request = new SearchRequest(indices);
+		request.source(builder);
+		
+		RestHighLevelClient client = this.getClient();
+		
+		SearchResponse response = null;
+		
+		try {
+			response = client.search(request);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				client.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+		return response;
+	}
 
 	private ObjectMapper getMapper() {
 		ObjectMapper mapper = new ObjectMapper();
@@ -288,7 +346,7 @@ public class ElasticsearchRepositoryImpl implements ElasticsearchRepository {
 	}
 	
 	private boolean findIndex(RestHighLevelClient client, String index) {
-		
+	
 		IndexRequest indexRequest = new IndexRequest(index);
 		
 		IndexResponse response = null;
@@ -307,7 +365,32 @@ public class ElasticsearchRepositoryImpl implements ElasticsearchRepository {
 		
 		return response == null ? false : true;
 	}
-
-
-
+	
+	private void buildMustQuery(SearchSourceBuilder builder, Map<String, String> filters) {
+		BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+		
+		MatchAllQueryBuilder allQuery = QueryBuilders.matchAllQuery();
+		boolQuery.filter(allQuery);
+		
+		for(Map.Entry<String, String> entry : filters.entrySet()) {
+			QueryBuilder query = QueryBuilders.matchPhraseQuery(entry.getKey(), entry.getValue());
+			boolQuery.filter(query);
+		}
+		
+		builder.query(boolQuery);
+	}
+	
+	private void buildSumAggregation(SearchSourceBuilder searchBuilder, Map<String, String> terms, 
+			Map<String, String> fields) {
+				
+		for(Map.Entry<String, String> term : terms.entrySet()) {
+			TermsAggregationBuilder aggregation = AggregationBuilders.terms(term.getKey()).field(term.getValue());
+			
+			for(Map.Entry<String, String> field : fields.entrySet()) {
+				aggregation.subAggregation(AggregationBuilders.sum(field.getKey()).field(field.getValue()));
+			}
+			
+			searchBuilder.aggregation(aggregation);
+		}
+	}
 }
