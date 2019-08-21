@@ -84,6 +84,37 @@ public class ElasticsearchRepositoryImplTest {
 	}
 
 	@Test
+	public void testGetByMapping() throws Exception {
+		this.repo.deleteIndex(INDEX);
+
+		String[] jsonArray = {
+				"{\n" + "	\"fornecedor_id\":\"65bbdd07-3be6-48f0-99b2-f6172272e839\",\n"
+						+ "	\"user_id\":\"7ea9aa7f-e475-4942-80c0-80502387b276\",\n" + "	\"like\":1,\n"
+						+ "	\"dislike\":0\n" + "}",
+				"{\n" + "	\"fornecedor_id\":\"65bbdd07-3be6-48f0-99b2-f6172272e839\",\n"
+						+ "	\"user_id\":\"7ea9aa7f-e475-4942-80c0-80502387b277\",\n" + "	\"like\":1,\n"
+						+ "	\"dislike\":0\n" + "}",
+				"{\n" + "	\"fornecedor_id\":\"65bbdd07-3be6-48f0-99b2-f6172272e839\",\n"
+						+ "	\"user_id\":\"7ea9aa7f-e475-4942-80c0-80502387b278\",\n" + "	\"like\":0,\n"
+						+ "	\"dislike\":1\n" + "}" };
+
+		ObjectMapper mapper = this.getMapper();
+
+		for (String str : jsonArray) {
+			JsonNode jsonObject = mapper.readTree(str);
+			this.repo.insert(INDEX, TYPE, UUID.randomUUID().toString(), jsonObject);
+		}
+		
+		Map<String, String> query = new HashMap<String, String>();
+		query.put("fornecedor_id", "65bbdd07-3be6-48f0-99b2-f6172272e839");
+		query.put("like", "1");
+		
+		SearchResponse response = this.repo.getByMapping(INDEX, query);
+		
+		assertNotNull(response);
+	}
+
+	@Test
 	public void testUpdate() throws Exception {
 		repo.insert(INDEX, TYPE, ID, jsonObject);
 
@@ -98,13 +129,13 @@ public class ElasticsearchRepositoryImplTest {
 
 		assertThat(result.get("likes").toString(), is("\"user_10\""));
 	}
-	
+
 	@Test
 	public void testUpsert() throws Exception {
 		this.repo.deleteIndex(INDEX);
-		
+
 		UpdateResponse response = this.repo.update(INDEX, TYPE, ID, this.getJsonObject());
-		
+
 		assertThat(response.getResult().toString(), is("CREATED"));
 	}
 
@@ -147,7 +178,7 @@ public class ElasticsearchRepositoryImplTest {
 	@Test
 	public void testCount() throws IOException {
 		this.repo.deleteIndex(INDEX);
-		
+
 		String[] jsonArray = {
 				"{\n" + "	\"fornecedor_id\":\"65bbdd07-3be6-48f0-99b2-f6172272e839\",\n"
 						+ "	\"user_id\":\"7ea9aa7f-e475-4942-80c0-80502387b276\",\n" + "	\"like\":1,\n"
@@ -188,9 +219,9 @@ public class ElasticsearchRepositoryImplTest {
 	private JsonNode getJsonObject() throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 
-		String jsonString = "{\n" + "	\"fornecedor_id\":\""+ ID + "\",\n"
-				+ "	\"user_id\":\"7ea9aa7f-e475-4942-80c0-80502387b276\",\n" + "	\"like\":1,\n"
-				+ "	\"dislike\":0\n" + "}";
+		String jsonString = "{\n" + "	\"fornecedor_id\":\"" + ID + "\",\n"
+				+ "	\"user_id\":\"7ea9aa7f-e475-4942-80c0-80502387b276\",\n" + "	\"like\":1,\n" + "	\"dislike\":0\n"
+				+ "}";
 
 		return mapper.readTree(jsonString);
 	}

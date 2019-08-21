@@ -21,6 +21,8 @@ public interface ElasticsearchRepository {
 	
 	JsonNode getByScript(String index, String query, JsonNode mappingParams);
 	
+	SearchResponse getByMapping(String index, Map<String, String> query);
+	
 	UpdateResponse updateMapping(String index, String type, String id, String script, JsonNode mappingParams);
 	
 	UpdateResponse update(String index, String type, String id, JsonNode jsonObject);

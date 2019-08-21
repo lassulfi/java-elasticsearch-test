@@ -15,14 +15,12 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.common.metrics.CounterMetric;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
@@ -30,7 +28,8 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
-import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -240,6 +239,32 @@ public class ElasticsearchRepositoryImpl implements ElasticsearchRepository {
 			}
 		}
 
+		return response;
+	}
+
+	public SearchResponse getByMapping(String index, Map<String, String> query) {
+		SearchSourceBuilder builder = new SearchSourceBuilder();
+		this.buildMustQuery(builder, query);
+		
+		SearchRequest request = new SearchRequest();
+		request.source(builder);
+		
+		SearchResponse response = null;
+		
+		RestHighLevelClient client = this.getClient();
+		
+		try {
+			response = client.search(request);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				client.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
 		return response;
 	}
 
