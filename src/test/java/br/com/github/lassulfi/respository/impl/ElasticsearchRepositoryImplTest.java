@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import br.com.github.lassulfi.repository.ElasticsearchRepository;
+import br.com.github.lassulfi.repository.exception.ElasticsearchException;
 import br.com.github.lassulfi.repository.impl.ElasticsearchRepositoryImpl;
 
 public class ElasticsearchRepositoryImplTest {
@@ -44,7 +45,7 @@ public class ElasticsearchRepositoryImplTest {
 	}
 
 	@Test
-	public void testCreateIndex() {
+	public void testCreateIndex() throws ElasticsearchException {
 		String newIndex = "tests";
 
 		this.repo.deleteIndex(newIndex);
@@ -56,14 +57,14 @@ public class ElasticsearchRepositoryImplTest {
 	}
 
 	@Test
-	public void testInsertObject() {
+	public void testInsertObject() throws ElasticsearchException {
 		IndexResponse response = repo.insert(INDEX, TYPE, ID, jsonObject);
 
 		assertThat(response.getId(), is(ID));
 	}
 
 	@Test
-	public void testFindById() {
+	public void testFindById() throws ElasticsearchException {
 		repo.insert(INDEX, TYPE, ID, jsonObject);
 
 		JsonNode jsonObject = repo.getById(INDEX, TYPE, ID);
@@ -72,7 +73,7 @@ public class ElasticsearchRepositoryImplTest {
 	}
 
 	@Test
-	public void testGetByScript() {
+	public void testGetByScript() throws ElasticsearchException {
 		repo.insert(INDEX, TYPE, ID, jsonObject);
 
 		String script = "int total = 0;" + "for (int i = 0; i < doc['likes'].length; ++i) {" + "++total;" + "}"
@@ -168,7 +169,7 @@ public class ElasticsearchRepositoryImplTest {
 	}
 
 	@Test
-	public void testDeleteIndex() {
+	public void testDeleteIndex() throws ElasticsearchException {
 
 		DeleteIndexResponse response = this.repo.deleteIndex(INDEX);
 
@@ -176,7 +177,7 @@ public class ElasticsearchRepositoryImplTest {
 	}
 
 	@Test
-	public void testCount() throws IOException {
+	public void testCount() throws IOException, ElasticsearchException {
 		this.repo.deleteIndex(INDEX);
 
 		String[] jsonArray = {
@@ -212,7 +213,7 @@ public class ElasticsearchRepositoryImplTest {
 	}
 
 	@After
-	public void tearDown() {
+	public void tearDown() throws ElasticsearchException {
 		this.repo.deleteIndex(INDEX);
 	}
 
